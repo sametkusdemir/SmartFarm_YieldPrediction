@@ -1,87 +1,62 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-import joblib
+import config
+from inference import YieldPredictor
 
-# --- 1. Model ve Sütun Bilgilerini Yükle ---
-# Not: Dosyaların app.py ile aynı klasörde olması gerekir
-model = xgb.XGBRegressor()
-model.load_model('xgb_agriculture_model.json')
-model_columns = joblib.load('model_columns.pkl')
+# --- Sayfa Ayarları ---
+st.set_page_config(page_title=config.PAGE_TITLE, page_icon=config.PAGE_ICON, layout="centered")
 
-# --- 2. Sayfa Başlığı ve Açıklama ---
-st.set_page_config(page_title="Akıllı Tarım Verim Tahmini", layout="centered")
-st.title("🚜 Akıllı Tarım: Mahsul Verim Tahminleyicisi")
-st.write("""
-Bu uygulama, Yapay Zeka (XGBoost) kullanarak tarlanızdan alacağınız tahmini verimi hesaplar.
-Lütfen aşağıdaki parametreleri giriniz.
+# --- Modeli Yükle (Cache kullanarak hızlandırıyoruz) ---
+@st.cache_resource
+def get_predictor():
+    return YieldPredictor()
+
+predictor = get_predictor()
+
+# --- Arayüz Başlıkları ---
+st.title(config.PAGE_TITLE)
+st.markdown("""
+Bu proje, **Makine Öğrenmesi (XGBoost)** kullanarak tarımsal verim tahmini yapar.
+Veri kaynağı: **FAO**.
 """)
 
-# --- 3. Kullanıcı Girdileri (Sidebar) ---
-st.sidebar.header("Tarla Bilgileri")
+# --- Sidebar (Kullanıcı Girdileri) ---
+st.sidebar.header(" Tarla Bilgileri")
 
-# Kullanıcıdan alınacak veriler
-# Bu listeler One-Hot Encoding mantığına göre backend'de işlenecek
-item_list = ['Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans', 'Wheat', 'Cassava', 'Sweet potatoes', 'Yams']
-continent_list = ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America']
+selected_item = st.sidebar.selectbox("Ürün Seçiniz:", config.ITEMS)
+selected_continent = st.sidebar.selectbox("Bölge (Kıta):", config.CONTINENTS)
 
-selected_item = st.sidebar.selectbox("Ekeceğiniz Ürün:", item_list)
-selected_continent = st.sidebar.selectbox("Bölge (Kıta):", continent_list)
+rain = st.sidebar.slider("Yıllık Yağış (mm):", 100, 3000, 1200)
+temp = st.sidebar.slider("Ortalama Sıcaklık (°C):", 5, 40, 20)
+pesticide = st.sidebar.number_input("Pestisit (Ton):", min_value=0.0, value=10.0)
 
-rain = st.sidebar.slider("Yıllık Ortalama Yağış (mm):", min_value=100, max_value=3000, value=1200)
-temp = st.sidebar.slider("Ortalama Sıcaklık (°C):", min_value=5, max_value=40, value=20)
-pesticide = st.sidebar.number_input("Pestisit Kullanımı (Ton):", min_value=0.0, value=10.0)
-
-# --- 4. Arka Plan İşlemleri (Preprocessing) ---
-# Kullanıcı girdilerini modelin anlayacağı formata çevirmemiz lazım
-
-# Bir sözlük (dictionary) oluşturuyoruz
-input_data = {
-    'average_rain_fall_mm_per_year': rain,
-    'pesticide_tonnes': pesticide,
-    'avg_temp': temp,
-    # Feature Engineering ile türettiğimiz alanları burada da hesaplamalıyız!
-    'Rain_Temp_Ratio': rain / temp if temp != 0 else 0
-}
-
-# Veriyi DataFrame'e çevir
-df_input = pd.DataFrame([input_data])
-
-# One-Hot Encoding işlemi (Kullanıcı seçimini sütunlara çevirme)
-# Önce tüm sütunları 0 olarak oluştur
-for col in model_columns:
-    if col not in df_input.columns:
-        df_input[col] = 0
-
-# Seçilen Ürün ve Kıta için ilgili sütunu 1 yap
-# Örn: Kullanıcı 'Maize' seçtiyse 'Item_Maize' sütunu 1 olmalı.
-item_col = f"Item_{selected_item}"
-continent_col = f"Continent_{selected_continent}"
-
-if item_col in df_input.columns:
-    df_input[item_col] = 1
-
-if continent_col in df_input.columns:
-    df_input[continent_col] = 1
-
-# Sütun sırasını modelin eğitimiyle birebir aynı yap (Çok Önemli!)
-df_input = df_input[model_columns]
-
-# --- 5. Tahmin Butonu ve Sonuç ---
-if st.button("Verimi Hesapla"):
-    prediction = model.predict(df_input)
-    verim = prediction[0]
+# --- Tahmin İşlemi ---
+if st.button("Verimi Hesapla 🚀", use_container_width=True):
+    # Veriyi hazırla
+    input_data = {
+        'Item': selected_item,
+        'Continent': selected_continent,
+        'average_rain_fall_mm_per_year': rain,
+        'avg_temp': temp,
+        'pesticide_tonnes': pesticide
+    }
     
-    st.success(f"🌱 Tahmini Verim: {verim:.2f} hg/ha")
-    
-    # İş içgörüsü mesajı
-    if verim > 70000:
-        st.balloons()
-        st.info("Harika! Bu koşullarda yüksek verim bekleniyor.")
-    elif verim < 20000:
-        st.warning("Dikkat: Bu koşullarda verim düşük olabilir. Gübrelemeyi veya ürün seçimini gözden geçirin.")
+    try:
+        # Inference dosyasındaki fonksiyonu çağırıyoruz
+        result = predictor.predict(input_data)
+        
+        # Sonucu Göster
+        st.success(f"Tahmini Verim: **{result:.2f} hg/ha**")
+        
+        # Görsel Geri Bildirim
+        if result > 60000:
+            st.balloons()
+            st.info(" Mükemmel verim bekleniyor!")
+        elif result < 20000:
+            st.warning(" Düşük verim riski. Gübreleme planını gözden geçirin.")
+            
+    except Exception as e:
+        st.error(f"Bir hata oluştu: {e}")
 
-# --- 6. Alt Bilgi ---
+# --- Footer ---
 st.markdown("---")
-st.caption("Bootcamp Final Projesi | Veri Kaynağı: FAO")
+st.caption("Bootcamp Final Projesi | v1.0.0")
