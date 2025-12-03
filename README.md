@@ -69,6 +69,22 @@ Baseline model ile optimize edilmiş Final model arasındaki performans farkı a
 
 5. İzleme (Monitoring): Canlı ortamda modelin başarısı, "Data Drift" (Girdi verilerinin dağılımının değişmesi) metrikleri ile aylık periyotlarla izlenmelidir.
 
+## 💻 Kurulum (Local Installation)
+
+Bu projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyebilirsiniz:
+
+**Adım 1: Projeyi Kopyalayın (Clone)**
+Öncelikle terminalinizi açın ve proje dosyalarını bilgisayarınıza indirmek için şu komutu yazın:
+```bash
+git clone [https://github.com/](https://github.com/)[KullaniciAdin]/SmartFarm_YieldPrediction.git
+cd SmartFarm_YieldPrediction
+```
+Adım 2: Gerekli Kütüphaneleri Yükleyin Projenin çalışması için gereken Python kütüphanelerini (pandas, xgboost, streamlit vb.) yükleyin:
+pip install -r requirements.txt
+
+Adım 3: Uygulamayı Başlatın Kurulum tamamlandıktan sonra aşağıdaki komutla arayüzü başlatın:
+streamlit run src/app.py
+
 ## İletişim
   Geliştirici: Samet Kuşdemir  
   LinkedIn: linkedin.com/in/sametkusdemir
