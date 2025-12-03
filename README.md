@@ -1,60 +1,91 @@
+# 🚜 SmartFarm: End-to-End Crop Yield Prediction
 
-# 🚜 SmartFarm: Crop Yield Prediction Project
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-ff4b4b)
+![XGBoost](https://img.shields.io/badge/Model-XGBoost-green)
+![Status](https://img.shields.io/badge/Status-Completed-success)
 
-##  Proje Hakkında
-Bu proje, FAO verilerini kullanarak tarımsal verimi tahmin eden uçtan uca bir Makine Öğrenmesi çözümüdür. Çiftçilerin ekecekleri ürün, bölge ve hava durumu koşullarına göre ne kadar ürün alacaklarını (hg/ha) tahmin eder.
+##  Proje Özeti
+**SmartFarm**, tarımsal verimliliği artırmak ve çiftçilerin karar alma süreçlerini desteklemek amacıyla geliştirilmiş bir Makine Öğrenmesi (ML) projesidir. FAO (Birleşmiş Milletler Gıda ve Tarım Örgütü) veri setlerini kullanarak; iklim koşulları, gübre kullanımı ve ekilen ürün türüne göre hektar başına düşen verimi (**hg/ha**) tahmin eder.
 
-##  Sonuçlar
-* **Baseline Model (Decision Tree):** R2 Score: 0.94
-* **Final Model (XGBoost):** R2 Score: 0.96
-* **En Önemli Faktörler:** Ürün Tipi (Item) ve Bölge (Continent), pestisit kullanımından daha etkilidir.
+Proje; veri analizi, özellik mühendisliği, model optimizasyonu ve canlıya alma (deployment) adımlarını kapsayan uçtan uca bir pipeline sunar.
 
-##  Kurulum
-1. Repoyu klonlayın.
-2. `pip install -r requirements.txt`
-3. Uygulamayı başlatın: `streamlit run src/app.py`
+###  Canlı Demo
+Uygulamayı aşağıdaki linkten deneyebilirsiniz:
+ **https://huggingface.co/spaces/sametkusdemir/SmartFarm-App**
+
+---
+
+## Veri Seti ve Özellikler
+Bu projede kullanılan veri seti, gerçek dünya tarım verilerini içerir ve ~28.000 satırdan oluşur.
+* **Kaynak:** Kaggle - FAO Crop Yield Prediction
+* **Veri Hacmi:** 28,000+ Satır, 10+ Özellik (Feature Engineering sonrası).
+
+**Girdi Değişkenleri (Features):**
+* `Item`: Ekilen ürün (Mısır, Patates, Pirinç vb.)
+* `Continent`: Ülkenin bulunduğu kıta (Coğrafi konum etkisi için türetildi).
+* `average_rain_fall_mm_per_year`: Yıllık ortalama yağış miktarı.
+* `pesticide_tonnes`: Kullanılan pestisit miktarı.
+* `avg_temp`: Ortalama sıcaklık.
+* `Rain_Temp_Ratio`: Nemlilik ve kuraklık dengesini ölçen türetilmiş değişken.
+
+---
+
+##  Proje Mimarisi
+
+Proje şu adımlardan oluşmaktadır:
+
+1.  **EDA (Keşifçi Veri Analizi):** Veri dağılımı, eksik değerler ve aykırı değer (outlier) analizi.
+2.  **Preprocessing:** Veri temizliği, One-Hot Encoding ve `StandardScaler`.
+3.  **Feature Engineering:** Coğrafi gruplandırma (`Continent`) ve iklimsel oranlar (`Rain_Temp_Ratio`) türetilmesi.
+4.  **Modelleme:**
+    * *Baseline:* Decision Tree Regressor
+    * *Final:* XGBoost Regressor (Hyperparameter Optimization)
+5.  **Deployment:** Streamlit arayüzü ile Hugging Face Spaces üzerinde yayınlama.
+
+---
+
+##  Model Performansı
+
+Baseline model ile optimize edilmiş Final model arasındaki performans farkı aşağıdadır:
+
+| Model | MAE (Ortalama Hata) | R² Score (Doğruluk) | Açıklama |
+|-------|---------------------|---------------------|----------|
+| **Decision Tree (Baseline)** | ~7206 | **0.9495** | Temel model, hızlı kurulum. |
+| **XGBoost (Final)** | ~6500 | **0.9586** | Optimize edilmiş, daha kararlı. |
+
+> **Sonuç:** XGBoost modeli, karmaşık ve doğrusal olmayan ilişkileri daha iyi yakalayarak başarı oranını artırmıştır.
+
+---
+
+## Proje Raporu (Bootcamp Gereksinimleri)
+1. Problem Tanımı: Tarımsal üretimde verim belirsizliği, kaynak israfına yol açmaktadır. Bu proje, iklim ve toprak verilerine dayanarak verim tahmini yapan bir regresyon problemidir.
+
+2. Validasyon Şeması: Veri seti yeterince büyük olduğu için (%80 Train - %20 Test) Hold-out Validation yöntemi kullanılmıştır. random_state=42 ile sonuçların tekrarlanabilirliği sağlanmıştır.
+
+3. Feature Engineering: Model başarısını artırmak için ülkeler kıtalara (Continent) indirgenmiş, sıcaklık ve yağış arasındaki ilişkiyi kuran Rain_Temp_Ratio özelliği türetilmiştir.
+
+4. Business İçgörüsü (Feature Importance): Model analizine göre, verimi en çok etkileyen faktörler Ürün Tipi (Item) ve Konum (Continent)'dur. Pestisit kullanımının etkisi, doğru ürün ve bölge seçiminden sonra gelmektedir.
+
+5. İzleme (Monitoring): Canlı ortamda modelin başarısı, "Data Drift" (Girdi verilerinin dağılımının değişmesi) metrikleri ile aylık periyotlarla izlenmelidir.
+
+## İletişim
+  Geliştirici: Samet Kuşdemir  
+  LinkedIn: linkedin.com/in/sametkusdemir
 
 ##  Repo Yapısı
-* `notebooks/`: EDA ve Model eğitimi adımları.
-* `src/`: Streamlit uygulama kodları.
-* `models/`: Eğitilmiş XGBoost modeli.
 
-* ---
-## 📝 Proje Raporu ve Soru-Cevap
-
-Bootcamp final projesi gereksinimleri kapsamında sorulan soruların cevapları aşağıdadır:
-
-### 1. Problem Tanımı
-Tarımsal üretimde verim belirsizliği, çiftçilerin gelir kaybına ve kaynak israfına (su, gübre) yol açmaktadır. Bu proje, FAO verilerini kullanarak belirli iklim, gübre ve ürün koşullarında hektar başına düşen verimi (hg/ha) tahmin eden bir regresyon modelidir. Amaç, çiftçilere veri odaklı ekim kararları aldırmaktır.
-
-### 2. Baseline Süreci ve Skoru
-İlk aşamada veri seti temizlendikten sonra karmaşık olmayan bir **Decision Tree Regressor** kuruldu.
-* **Model:** Decision Tree (Default parametreler)
-* **Özellikler:** One-Hot Encoded `Item` ve `Continent` + Ham sayısal veriler.
-* **Baseline Skoru:** MAE: ~7200, **R2 Score: 0.9495**
-
-### 3. Feature Engineering Denemeleri
-Veri setindeki 10 feature kuralını sağlamak ve model başarısını artırmak için şunlar yapıldı:
-* **Continent:** Ülke (`Area`) sütunu kardinalitesi yüksek olduğu için kıtalara indirgendi.
-* **Rain_Temp_Ratio:** Yağış ve sıcaklık arasındaki dengeyi yakalamak için matematiksel bir oran türetildi.
-* **Temp_Category:** Sıcaklık değerleri bitki gelişimine göre (Cool, Mild, Hot) kategorize edildi.
-Sonuç olarak model, coğrafi ve iklimsel ilişkileri daha iyi öğrendi.
-
-### 4. Validasyon Şeması
-Veri seti 28.000+ satırdan oluştuğu için **Hold-out Validation (%80 Train - %20 Test)** yöntemi seçildi. Veri hacmi yeterli olduğundan Cross-Validation'ın maliyetine girilmedi. `random_state=42` sabitlenerek sonuçların tekrarlanabilir olması sağlandı.
-
-### 5. Final Pipeline ve Model Seçimi
-Final model olarak **XGBoost Regressor** seçildi.
-* **Neden XGBoost?** Tabular verilerde, özellikle doğrusal olmayan ilişkilerde (Tarım verisi gibi) en yüksek performansı verdiği ve overfitting'e karşı dirençli olduğu için.
-* **Skor:** **R2 Score: 0.9586**. Baseline modele göre yaklaşık %1'lik bir iyileşme sağlandı ve hata payı (MAE) düştü.
-
-### 6. Business Gereksinimleri ve Yorumu
-Modelin `feature_importance` analizi sonucunda, verimi en çok etkileyen faktörün **"Ürün Tipi" (Item)** ve **"Coğrafi Konum" (Continent)** olduğu görüldü. Pestisit kullanımı daha alt sıralarda kaldı.
-* **İş İçgörüsü:** Çiftçiler verimi artırmak için gübreyi artırmaktan ziyade, toprağa ve bölgeye en uygun ürünü seçmeye odaklanmalıdır. Model bu kararı desteklemektedir.
-
-### 7. Canlıya Alma (Deployment) ve İzleme
-Model, **Streamlit** kullanılarak son kullanıcı arayüzüne dönüştürüldü.
-Canlı ortamda (Production) izlenmesi gereken metrikler:
-* **Model Drift:** Gerçek dünya iklim verileri değiştikçe modelin tahmin başarısı düşüyor mu?
-* **Data Drift:** Kullanıcıların girdiği verilerin dağılımı (örn: aşırı sıcaklık girişleri) eğitim verisinden sapıyor mu?
-Bu metrikler aylık olarak kontrol edilip model yeniden eğitilmelidir (Retraining).
+```text
+SmartFarm_YieldPrediction/
+├── data/                  # Ham ve işlenmiş veriler
+├── notebooks/             # Jupyter Notebook çalışmaları
+│   ├── 1_EDA.ipynb        # Veri analizi ve temizlik
+│   ├── 2_Baseline.ipynb   # Temel model eğitimi
+│   └── 3_Final_Model.ipynb# XGBoost ve Feature Importance
+├── src/                   # Kaynak kodlar
+│   ├── app.py             # Streamlit arayüz kodu
+│   ├── inference.py       # Tahminleme mantığı (Backend)
+│   └── config.py          # Proje ayarları
+├── models/                # Eğitilmiş model (.json) ve pickle dosyaları
+├── requirements.txt       # Kütüphane bağımlılıkları
+└── README.md              # Proje dokümantasyonu
